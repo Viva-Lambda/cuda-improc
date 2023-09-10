@@ -81,8 +81,8 @@ int main(void) { // yep this is (void) type of day
         streamSize / threads_per_block, threads_per_block,
         0, streams[i]>>>(pixels_device, imwidth, imheight,
                          i);
+    CUDA_CHECK(cudaGetLastError());
   }
-  CUDA_CHECK(cudaGetLastError());
   CUDA_CHECK(cudaDeviceSynchronize());
   //
   unsigned char *pixels_host = new unsigned char[imsize];

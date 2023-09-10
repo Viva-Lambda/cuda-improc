@@ -6,6 +6,10 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 
+//
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+
 namespace cudaimproc {
 
 void render(std::optional<unsigned char *> pixels_opt,
@@ -42,4 +46,25 @@ void render(std::optional<unsigned char *> pixels_opt,
   }
 }
 
-} // namespace cuda_imgproc
+img_info::img_info(unsigned char *d, std::size_t w,
+                   std::size_t h, std::size_t c,
+                   const char *n)
+    : data{nullptr}, width(w), height(h), channels(c),
+      name(n) {
+  std::size_t imsize = width * height * channels;
+  data = new unsigned char[imsize];
+  std::copy(d, d + (width * h * c),
+            data); // copy the data into p2
+}
+
+img_info imread(std::filesystem::path impath) {
+  //
+  int w, h, c;
+  std::filesystem::path im_p = impath.make_preferred();
+  const char *img_p = im_p.c_str();
+  unsigned char *img = stbi_load(img_p, &w, &h, &c, 0);
+  img_info info(img, w, h, c, "in_image");
+  return info;
+}
+
+} // namespace cudaimproc
