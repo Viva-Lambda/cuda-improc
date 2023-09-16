@@ -8,10 +8,10 @@
 #include <optional>
 
 namespace cudaimproc {
-__global__ void gen_gradient_async(unsigned char *pixels,
-                                   const int imwidth,
-                                   const int imheight,
-                                   const int rgb_offset) {
+__global__ void
+gen_gradient_async(unsigned char *pixels, const int imwidth,
+                   const int imheight,
+                   const std::size_t stream_offset) {
   //
   int col = threadIdx.x; // local thread index
   col +=
@@ -21,25 +21,26 @@ __global__ void gen_gradient_async(unsigned char *pixels,
     return;
   }
 
-  float pv = static_cast<float>(col) /
-             static_cast<float>(imwidth - 1);
-  unsigned char p = static_cast<unsigned char>(pv * 255.99);
   if (rgb_offset == 2) {
-    float b = 0.25f;
-    p = static_cast<unsigned char>(b * 255.99);
   }
   int bytes_per_pixel = 3;
   int per_scanline = imwidth * bytes_per_pixel;
 
+  float g = static_cast<float>(col) /
+            static_cast<float>(imwidth - 1);
+  unsigned char green =
+      static_cast<unsigned char>(g * 255.99);
+
+  float b = 0.25f;
+  unsigned char blue = static_cast<unsigned char>(b * 255.99);
+
   for (int row = 0; row < imheight; ++row) {
     //
-    if (rgb_offset == 1) {
-      float pv = static_cast<float>(row) /
-                 static_cast<float>(imheight - 1);
-      p = static_cast<unsigned char>(pv * 255.99);
-    }
-    int index = col * bytes_per_pixel + row * per_scanline;
-    pixels[index + rgb_offset] = p;
+    float r = static_cast<float>(row) /
+              static_cast<float>(imheight - 1);
+    unsigned char red =
+        static_cast<unsigned char>(r * 255.99);
+    // TODO write offset code
   }
 }
 }; // namespace cudaimproc

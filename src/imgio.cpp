@@ -1,5 +1,6 @@
 #include <cudaimproc/imgio.h>
 
+#include <filesystem>
 #include <iostream>
 
 //
@@ -66,5 +67,6 @@ img_info imread(std::filesystem::path impath) {
   img_info info(img, w, h, c, "in_image");
   return info;
 }
+
 
 } // namespace cudaimproc

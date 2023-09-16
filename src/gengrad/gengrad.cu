@@ -1,5 +1,6 @@
 // simple
 #include <cudaimproc/cudacheck.h>
+#include <cudaimproc/execonfig.h>
 #include <cudaimproc/imgio.h>
 //
 #include <cuda_runtime.h>
@@ -51,13 +52,11 @@ int main(void) { // yep this is (void) type of day
   const std::size_t imwidth = 640;
   const std::size_t imheight = static_cast<int>(
       static_cast<float>(imwidth) / aspect_ratio);
+  // execution config
   std::size_t threads_per_block = 64;
-  int remainder = imheight % threads_per_block;
-  std::size_t nb_blocks =
-      (remainder) != 0
-          ? (imheight + threads_per_block - remainder) /
-                threads_per_block
-          : imheight / threads_per_block;
+  std::size_t nb_rows_to_process = imheight;
+  cudaimproc::ExecutionConfig1D config(nb_rows_to_process,
+                                       threads_per_block);
   std::size_t bytes_per_line = imwidth * 3;
   std::size_t imsize = bytes_per_line * imheight;
   unsigned char *pixels_device{nullptr};
@@ -67,9 +66,10 @@ int main(void) { // yep this is (void) type of day
                         imsize * sizeof(unsigned char)));
 
   //
-  cudaimproc::
-      gen_gradient<<<nb_blocks, threads_per_block>>>(
-          pixels_device, imwidth, imheight);
+  std::cout << "block_nb: " << config.block_nb(0) << std::endl;
+  cudaimproc::gen_gradient<<<config.block_nb(0),
+                             config.nb_threads()>>>(
+      pixels_device, imwidth, imheight);
   CUDA_CHECK(cudaGetLastError());
   CUDA_CHECK(cudaDeviceSynchronize());
   //
@@ -81,7 +81,7 @@ int main(void) { // yep this is (void) type of day
 
   //
   cudaimproc::render(std::make_optional(pixels_host),
-                       imheight, imwidth);
+                     imheight, imwidth);
   // cuda_imgproc::render(std::nullopt, imheight, imwidth);
   delete[] pixels_host;
   return 0;

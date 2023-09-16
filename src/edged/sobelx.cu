@@ -1,5 +1,5 @@
 #include <cudaimproc/cudacheck.h>
-#include <cudaimproc/imgio.h>
+#include <cudaimproc/imutils.h>
 //
 #include <matrix/matrix.cuh>
 //
@@ -68,12 +68,9 @@ __global__ void sobelX_3x3(unsigned char *in_img,
 }; // namespace cudaimproc
 
 int main() {
-  std::filesystem::path img_dir(IMAGE_DIR);
-  std::filesystem::path imname("owl.jpg");
-  std::filesystem::path imgp = img_dir / imname;
 
   // image config
-  cudaimproc::img_info info = cudaimproc::imread(imgp);
+  cudaimproc::img_info info = cudaimproc::owl_img();
   const std::size_t imgSize =
       info.width * info.height * info.channels;
   const std::size_t imgSizeByte =
