@@ -5,6 +5,11 @@
 
 namespace cudaimproc {
 
+std::vector<std::pair<unsigned int, unsigned int>>
+ExecutionConfig1D::chunks() const {
+  return stream_chunks;
+}
+
 // find total number of blocks when give number of elements
 // to process
 std::size_t ExecutionConfig1D::find_nb_blocks(
@@ -56,8 +61,7 @@ std::size_t ExecutionConfig1D::block_nb(
     std::string indx = std::to_string(stream_index);
     std::string nbs = std::to_string(stream_nb);
     std::string msg = "given stream index " + indx;
-    msg +=
-        " is >= available number of streams " + nbs;
+    msg += " is >= available number of streams " + nbs;
     throw std::runtime_error(msg);
   }
   std::pair<unsigned int, unsigned int> stream_start_end =

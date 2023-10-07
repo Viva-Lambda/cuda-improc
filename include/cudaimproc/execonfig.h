@@ -1,8 +1,8 @@
 #ifndef EXECONFIG_H
 #define EXECONFIG_H
 // execution config handler for cuda kernels
-#include <vector>
 #include <tuple>
+#include <vector>
 
 namespace cudaimproc {
 
@@ -18,6 +18,8 @@ struct ExecutionConfig1D {
   std::size_t block_nb(std::size_t stream_index = 0) const;
   std::size_t nb_threads() const;
   std::size_t nb_streams() const;
+  std::vector<std::pair<unsigned int, unsigned int>>
+  chunks() const;
 
 private:
   std::size_t

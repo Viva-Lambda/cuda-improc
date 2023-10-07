@@ -111,3 +111,28 @@ target_compile_definitions(
     PRIVATE
     IMAGE_DIR="${ImDir}"
     )
+
+
+# streamed sobel
+
+add_executable(streamedSobel.out 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/gengrad/trueasyncgrad.cu"
+    ${ImSRC}
+    ${ExecutionSRC}
+    )
+
+target_include_directories(streamedSobel.out PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
+target_link_libraries(streamedSobel.out PRIVATE CUDA::cudart)
+target_link_libraries(streamedSobel.out PRIVATE CUDA::cuda_driver)
+target_link_libraries(streamedSobel.out PRIVATE CUDA::curand)
+
+set_target_properties(streamedSobel.out PROPERTIES LINKER_LANGUAGE CUDA)
+set_target_properties(streamedSobel.out PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+target_compile_definitions(
+    streamedSobel.out 
+    PRIVATE
+    IMAGE_DIR="${ImDir}"
+    )
+

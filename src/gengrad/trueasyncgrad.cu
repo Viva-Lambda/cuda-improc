@@ -5,6 +5,7 @@
 //
 #include <cuda_runtime.h>
 #include <iostream>
+#include <memory>
 #include <optional>
 
 namespace cudaimproc {
@@ -21,8 +22,6 @@ gen_gradient_async(unsigned char *pixels, const int imwidth,
     return;
   }
 
-  if (rgb_offset == 2) {
-  }
   int bytes_per_pixel = 3;
   int per_scanline = imwidth * bytes_per_pixel;
 
@@ -32,7 +31,8 @@ gen_gradient_async(unsigned char *pixels, const int imwidth,
       static_cast<unsigned char>(g * 255.99);
 
   float b = 0.25f;
-  unsigned char blue = static_cast<unsigned char>(b * 255.99);
+  unsigned char blue =
+      static_cast<unsigned char>(b * 255.99);
 
   for (int row = 0; row < imheight; ++row) {
     //
@@ -45,66 +45,56 @@ gen_gradient_async(unsigned char *pixels, const int imwidth,
 }
 }; // namespace cudaimproc
 
-int main(void) { // yep this is (void) type of day
-                 //
+int main() {
+  std::filesystem::path img_dir(IMAGE_DIR);
+  std::filesystem::path imname("owl.jpg");
+  std::filesystem::path imgp = img_dir / imname;
 
   // image config
-  const float aspect_ratio = 16.0f / 9.0f;
-  const std::size_t imwidth = 640;
-  const std::size_t imheight = static_cast<int>(
-      static_cast<float>(imwidth) / aspect_ratio);
-  const std::size_t bytes_per_line = imwidth * 3;
-  const std::size_t imsize = bytes_per_line * imheight;
-  const std::size_t imsizeInBytes =
-      imsize * sizeof(unsigned char);
+  cudaimproc::img_info info = cudaimproc::imread(imgp);
+  const std::size_t imgSize =
+      info.width * info.height * info.channels;
+  const std::size_t imgSizeByte =
+      imgSize * sizeof(unsigned char);
 
-  // kernel config
+  cudaError_t res = cudaGetLastError();
+  std::cout << "CUDA ERROR :: " << cudaGetErrorName(res)
+            << std::endl;
 
+  // kernel execution config
   const std::size_t threads_per_block = 64;
   const std::size_t nb_streams =
       3; // 1 for each rgb component
   cudaimproc::ExecutionConfig1D config(
-      imheight, threads_per_block, nb_streams);
+      info.height, threads_per_block, nb_streams);
   const std::size_t streamSize =
-      imsize / config.nb_streams();
+      imgSize / config.nb_streams();
+
   cudaStream_t streams[nb_streams];
 
   // create cuda stream
   for (int i = 0; i < nb_streams; ++i) {
     CUDA_CHECK(cudaStreamCreate(&streams[i]));
   }
+  //
 
-  unsigned char *pixels_device{nullptr};
+  // pin host and device memory
+
+  //
+  std::cout << " height " << info.height << " width "
+            << info.width << std::endl;
+  for (auto [start, end] : config.chunks()) {
+    std::size_t stream_size =
+        info.width * (end - start) * sizeof(unsigned char);
+    //
+    std::cout << "start " << start << " end " << end
+              << std::endl;
+  }
   //
   // cuda malloc
-  CUDA_CHECK(
-      cudaMalloc((void **)(&pixels_device), imsizeInBytes));
-
-  //
-
-  for (int i = 0; i < nb_streams; ++i) {
-    std::size_t sblock_nb =
-        streamSize / config.nb_threads();
-    cudaimproc::gen_gradient_async<<<
-        sblock_nb, config.nb_threads(), 0, streams[i]>>>(
-        pixels_device, imwidth, imheight, i);
-    CUDA_CHECK(cudaGetLastError());
-  }
-  CUDA_CHECK(cudaDeviceSynchronize());
-  //
-  unsigned char *pixels_host = new unsigned char[imsize];
-  CUDA_CHECK(cudaMemcpy(pixels_host, pixels_device,
-                        imsizeInBytes,
-                        cudaMemcpyDeviceToHost));
-  CUDA_CHECK(cudaFree(pixels_device));
-
-  //
-  cudaimproc::render(std::make_optional(pixels_host),
-                     imheight, imwidth, 3, "asyncimg");
   // destroy resources
   for (int i = 0; i < nb_streams; ++i) {
     CUDA_CHECK(cudaStreamDestroy(streams[i]));
   }
-  delete[] pixels_host;
   return 0;
 }
